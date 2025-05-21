@@ -1,6 +1,7 @@
 from langchain_chroma import Chroma
 from langchain.docstore.document import Document
 from langchain_huggingface import HuggingFaceEmbeddings
+import warnings
 import os
 
 class RetrieverTool:
@@ -29,9 +30,36 @@ class RetrieverTool:
         else:
             raise ValueError("Vector store not found. You need to index documents first.")
         
-    def query(self, query: str, k: int = 4) -> list[str]:
+
+    def query_v1(self, query: str, k: int = 4) -> list[str]:
+        """
+        [DEPRECATED] Queries the vector store for the top-k most similar documents to the input query string.
+
+        Args:
+            query (str): The query string to search for similar documents.
+            k (int, optional): The number of top similar documents to retrieve. Defaults to 4.
+
+        Returns:
+            list[str]: A list containing the page content of the top-k similar documents.
+
+        Deprecated:
+            This method is deprecated and may be removed in future versions. Use the updated query method instead.
+        """
+        warnings.warn(
+            "query_v1() is deprecated and will be removed in a future version. Use query() instead.",
+            DeprecationWarning,
+            stacklevel=2  # shows the warning at the caller level
+        )
         docs = self.vstore.similarity_search(query, k=k)
         return [doc.page_content for doc in docs]
+    
+    def query(self, query: str, k: int = 4) -> list[str]:
+        """FOR PROJECT ONLY, PRODUCTION WOULD REQUIRE USERS TO ENTER INFORMATION ABOUT DOCUMENTS THEY WILL USE RAG WITH"""
+        if "bristol" not in query.lower():
+            query = f"In the context of the July 4th celebrations in Bristol, Rhode Island: {query}"
+        docs = self.vstore.similarity_search(query, k=k)
+        return [doc.page_content for doc in docs]
+
     
     @staticmethod
     def build_from_documents(
