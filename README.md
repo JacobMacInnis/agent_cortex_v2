@@ -10,6 +10,25 @@ All running **locally** with no paid APIs.
 
 ---
 
+## Working Cortex CLI
+
+![Agent Cortex CLI Demo](./assets/cli-screenshot-v1.png)
+
+In this terminal session, Agent Cortex handles three different types of queries using different tools. The LLM decides which tool will be optimal to get the best answer:
+
+1. **Retrieval (RAG)** — `Where are the fireworks on July 3rd?`  
+   → Retrieved from local documents indexed about Bristol, RI events.
+
+2. **Web Search** — `What is the weather in Bristol, RI tomorrow?`  
+   → Uses DuckDuckGo to search live internet results and summarizes forecast.
+
+3. **Calculator Tool** — `What is 5 * 7 + 15?`  
+   → Routes through a custom calculator tool to evaluate the expression.
+
+Each query is interpreted by the ReAct-based agent and routed to the appropriate tool — all executed **locally** with no API calls or internet billing of an LLM. The websearch is real though but not using outside LLMs for reasoning.
+
+---
+
 ## Features
 
 - Retrieval-Augmented Generation from `.txt` documents

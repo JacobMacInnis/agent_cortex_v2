@@ -9,15 +9,20 @@ def main():
 
     agent = get_agent()
 
+
     while True:
-        query = input("\n🧠 You: ")
-        if query.lower() in ["exit", "quit"]:
-            print("Shutting down Cortex")
-            break
 
         try: 
+            query = input("\n⟁ You: ")
+            if query.lower() in ["exit", "quit"]:
+                print("Shutting down Cortex")
+                break
+
             response = agent.invoke({"input": query})
-            print(f"\n🤖 Agent Cortex: {response}")
+            
+            
+            print(f"\n⚇ Cortex: {response['output']}\n")
+
         except Exception as e:
             print(f"Error: {e}")
 

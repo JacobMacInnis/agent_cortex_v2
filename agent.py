@@ -9,6 +9,11 @@ from tools.calculator import CalculatorTool
 # from transformers import pipeline
 from langchain_ollama import OllamaLLM
 
+import warnings
+from langchain_core._api.deprecation import LangChainDeprecationWarning
+warnings.filterwarnings("ignore", category=LangChainDeprecationWarning)
+
+
 def load_llm():
     return OllamaLLM(model="mistral", temperature=0.3)
 
@@ -74,7 +79,7 @@ def get_agent():
         tools=tools,
         llm=llm,
         agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        verbose=True,
+        verbose=False,
         handle_parsing_errors=True,
         max_iterations=3,
         early_stopping_method="generate"
