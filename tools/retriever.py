@@ -1,6 +1,6 @@
-from langchain.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain.docstore.document import Document
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 import os
 
 class RetrieverTool:
