@@ -1,0 +1,12 @@
+{
+    "typeCheckingMode": "strict",
+    "reportMissingTypeStubs": true,
+    "reportUnusedVariable": true,
+    "reportPrivateUsage": true,
+    "reportUnnecessaryTypeIgnoreComment": true,
+    "reportUntypedFunctionDecorator": true,
+    "reportUnknownMemberType": true,
+    "include": [
+        "."
+    ]
+}
