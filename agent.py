@@ -4,11 +4,13 @@ from langchain.tools import BaseTool
 from langchain.memory import ConversationBufferMemory
 from langchain_openai import ChatOpenAI
 
-
+""" Tool Imports"""
 from tools.reasoning import ReasoningTool
 from tools.retriever import RetrieverTool
 from tools.websearch import WebSearchTool
 from tools.calculator import CalculatorTool
+from tools.longterm_memory import LongTermMemoryTool
+from longterm_memory import LongTermMemory
 
 # from transformers import pipeline
 from langchain_ollama import OllamaLLM
@@ -53,8 +55,16 @@ def get_tools(memory: ConversationBufferMemory) -> list[BaseTool]:
     websearch = WebSearchTool()
     calculator = CalculatorTool()
     fallback = FallbackTool()
+    longterm_store = LongTermMemory()
+    longterm_tool = LongTermMemoryTool(memory_store=longterm_store)
     reasoning_tool = ReasoningTool(name="Reasoning", memory=memory)
 
+
+    def guarded_retriever(q: str) -> str:
+        forbidden_keywords = ["weather", "forecast", "temperature", "time", "today", "tomorrow"]
+        if any(k in q.lower() for k in forbidden_keywords):
+            return "(Retriever skipped: question appears to require real-time data.)"
+        return "\n".join(retriever.query(q))
     return [
         Tool(
             name="WebSearch",
@@ -68,9 +78,14 @@ def get_tools(memory: ConversationBufferMemory) -> list[BaseTool]:
         ),
         Tool(
             name="Retriever",
-            func=lambda q: "\n".join(retriever.query(q)),  # type: ignore
+            func=guarded_retriever,
             description="Use this tool to retrieve documents from the knowledge base. "
                         "Input should be a query string."
+        ),
+        Tool(
+            name="LongTermMemory", 
+            func=longterm_tool.run, 
+            description=longterm_tool.description
         ),
         Tool(
             name="Reasoning",
