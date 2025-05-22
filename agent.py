@@ -1,7 +1,11 @@
-from langchain.agents import Tool, initialize_agent, AgentType
+from langchain.agents import Tool, initialize_agent, AgentType, ConversationalAgent
 from langchain.agents.agent_types import AgentType
 from langchain.tools import BaseTool
+from langchain.memory import ConversationBufferMemory
+from langchain_openai import ChatOpenAI
 
+
+from tools.reasoning import ReasoningTool
 from tools.retriever import RetrieverTool
 from tools.websearch import WebSearchTool
 from tools.calculator import CalculatorTool
@@ -13,9 +17,21 @@ import warnings
 from langchain_core._api.deprecation import LangChainDeprecationWarning
 warnings.filterwarnings("ignore", category=LangChainDeprecationWarning)
 
+from dotenv import load_dotenv
+load_dotenv()
+
+from langchain.tools import tool
+
+@tool
+def reason_from_memory(prompt: str) -> str:
+    """Use this tool when you think the answer is already known or can be reasoned from prior conversation without using any other tools."""
+    return f"(Reasoned directly without tools): {prompt}"
+
+
 
 def load_llm():
     return OllamaLLM(model="mistral", temperature=0.3)
+    # return ChatOpenAI(model="gpt-3.5-turbo", temperature=0.3)
 
 
 """ V1 we were using the Hugging Face LLM pipeline for text generation."""
@@ -32,11 +48,12 @@ def load_llm():
 #     )
 #     return HuggingFacePipeline(pipeline=pipe)
 
-def get_tools() -> list[BaseTool]:
+def get_tools(memory: ConversationBufferMemory) -> list[BaseTool]:
     retriever = RetrieverTool()
     websearch = WebSearchTool()
     calculator = CalculatorTool()
     fallback = FallbackTool()
+    reasoning_tool = ReasoningTool(name="Reasoning", memory=memory)
 
     return [
         Tool(
@@ -56,10 +73,16 @@ def get_tools() -> list[BaseTool]:
                         "Input should be a query string."
         ),
         Tool(
+            name="Reasoning",
+            func=reason_from_memory,
+            description="Use this when the answer is likely already known from prior conversation or does not require any tool."
+        ),
+        Tool(
             name="Fallback",
             func=fallback.run,
             description="Used when the input is ambiguous, self-referential, or not clearly directed at a specific task."
-        )
+        ),
+        reasoning_tool,
     ]
 
 class FallbackTool:
@@ -72,16 +95,43 @@ class FallbackTool:
 
 # Initialize the LLM and tools
 def get_agent():
-    tools = get_tools()
+    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+    tools = get_tools(memory)
     llm = load_llm()
 
-    return initialize_agent(
+    format_instructions = (
+        "To use a tool, use the following format:\n\n"
+        "Thought: Do I need to use a tool? Yes\n"
+        "Action: The action to take, must be one of [{tool_names}]\n"
+        "Action Input: The input to the action\n\n"
+        "When you have the final answer, use:\n\n"
+        "Thought: Do I need to use a tool? No\n"
+        "Final Answer: [your answer here]"
+    )
+
+    agent_prompt = ConversationalAgent.create_prompt(
+        tools=tools,
+        prefix=(
+            "You are a helpful assistant who can use tools. "
+            "Below is the conversation so far:\n\n"
+            "{chat_history}\n\n"
+            "Use this to understand what the user has previously told you."
+        ),
+        format_instructions=format_instructions,
+        suffix="{input}",
+        input_variables=["input", "chat_history", "agent_scratchpad"]
+    )
+
+    agent = initialize_agent(
         tools=tools,
         llm=llm,
-        agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        verbose=False,
+        agent_type=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
+        memory=memory,
+        agent_kwargs={"prompt": agent_prompt},
+        verbose=True,
         handle_parsing_errors=True,
         max_iterations=3,
         early_stopping_method="generate"
-        # return_intermediate_steps=True
     )
+
+    return agent, memory
