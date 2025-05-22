@@ -1,10 +1,13 @@
-# Agent Cortex v1
+# Agent Cortex v2
 
 **Agent Cortex** is a local, multi-tool AI assistant built with LangChain, Fast retrieval, and a reasoning-capable language model (Mistral 7B). It can answer questions using a mix of:
 
 - 🔍 Document retrieval (RAG)
-- 🧮 Math calculations
+- 💬 Short-term memory (chat history)
+- 🧠 Long-term memory (fact retention across sessions)
 - 🌐 Web search (DuckDuckGo)
+- 🐍 Python interpreter tool
+- 🧮 Math calculations
 
 All running **locally** with no paid APIs.
 
@@ -25,6 +28,15 @@ In this terminal session, Agent Cortex handles three different types of queries 
 3. **Calculator Tool** — `What is 5 * 7 + 15?`  
    → Routes through a custom calculator tool to evaluate the expression.
 
+4. **Short-Term-Memory** — `My name is Jacob.` then later: `What is my name?`  
+   → Agent remembers and recalls personal facts.
+
+5. **Long-Term-Memory** — The agent determins if input is long term storage desirable and stores in a local vector database. upon shutting the agent down and startup up later it is able to recall information about the user that it had saved.
+   → Agent remembers and recalls personal facts.
+
+6. **Python REPL** — `sum([1, 2, 3])`  
+   → Executes Python code securely using a local interpreter.
+
 Each query is interpreted by the ReAct-based agent and routed to the appropriate tool — all executed **locally** with no API calls or internet billing of an LLM. The websearch is real though but not using outside LLMs for reasoning.
 
 ---
@@ -32,12 +44,15 @@ Each query is interpreted by the ReAct-based agent and routed to the appropriate
 ## Features
 
 - Retrieval-Augmented Generation from `.txt` documents
+- Short-term memory using chat history context
+- Long-term memory — agent remembers facts across sessions
 - Tool-based reasoning using LangChain’s ReAct agent
 - DuckDuckGo web search integration
+- 🐍 Python REPL tool for executing code
 - Calculator for numeric inputs
 - Mistral 7B via Ollama (runs locally as CLI)
 - Fallback + context injection for vague queries
-- CLI chat interface
+- CLI-based agent chat interface loop
 
 ---
 
@@ -115,6 +130,8 @@ You:
 Try asking:
 
 - `"What time is the Fourth of July parade?"`
+- `"My name is Jacob" followed by "What is my name?"`
+- `"sum([2, 4, 6])"`
 - `"Who is todays date and the weather look like in Boston?"`
 - `"What is 25 * 4 + 3?"`
 
@@ -126,8 +143,8 @@ While Agent Cortex v1 is functional, it's an early prototype with several known 
 
 #### Agent Behavior
 
-- No long-term memory: The agent has no history of previous interactions or user context beyond a single input.
-- No conversational flow: It cannot maintain back-and-forth dialogue or refer to prior questions.
+- Long-term memory is fact-based only: It stores facts like names and locations, not full conversations.
+- Short-term memory is session-only: Once you close the CLI, short-term context is reset.
 - No agent reflection or self-correction: It does not retry intelligently or summarize thoughts beyond what the base model provides.
 - Inconsistent ReAct formatting: The LLM may sometimes fail to produce valid Thought / Action / Action Input format, causing parsing errors or retries.
 - Fallbacks are basic and do not yet include streaming or error correction
@@ -151,17 +168,6 @@ While Agent Cortex v1 is functional, it's an early prototype with several known 
 - No fine-tuning: The Mistral model is used out-of-the-box with no task-specific customization.
 - No prompt injection prevention: User input is not sanitized or structured securely for prompt-based attacks.
 - No multi-turn tool use: Tools are single-action only — no recursive or multi-step reasoning chains.
-
----
-
-## What's Next (v2 Preview)
-
-Agent Cortex v2 will include:
-
-- Streaming FastAPI endpoint + web UI
-- Tool-aware chain-of-thought reasoning
-- Memory + clarification for ambiguous questions
-- More tools (e.g. file summarization, search filtering)
 
 ---
 
