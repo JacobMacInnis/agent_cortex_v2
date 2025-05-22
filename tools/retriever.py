@@ -1,10 +1,18 @@
+from typing import Any, Dict, Optional, Type
+from pydantic import BaseModel, Field, PrivateAttr
 from langchain_chroma import Chroma
 from langchain.docstore.document import Document
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain.tools import BaseTool
 import warnings
 import os
 
-class RetrieverTool:
+
+class RetrieverInput(BaseModel):
+    query: str = Field(description="The query to search in the vector store.")
+
+
+class RetrieverTool(BaseTool):
     """
     A tool for performing semantic document retrieval using Chroma and Hugging Face embeddings.
 
@@ -16,16 +24,26 @@ class RetrieverTool:
     It is designed to be used as a retrieval component within an LLM-based agent system,
     enabling context-aware responses based on a preloaded knowledge base.
     """
+
+    name: str = "Retriever"
+    description: str = "Use this tool to retrieve documents from the knowledge base. Input should be a query string."
+    args_schema: Type[BaseModel] = RetrieverInput # type: ignore
+
+    _persist_directory: str = PrivateAttr()
+    _embedding_model: HuggingFaceEmbeddings = PrivateAttr()
+    _vstore: Chroma = PrivateAttr()
+
+
     def __init__(self, persist_directory: str = "vectorstore"):
-        self.persist_directory = persist_directory
-        self.embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-        self.vstore = self._load_vectorstore()
+        self._persist_directory = persist_directory
+        self._embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        self._vstore = self._load_vectorstore()
 
     def _load_vectorstore(self):
-        if os.path.exists(self.persist_directory):
+        if os.path.exists(self._persist_directory):
             return Chroma(
-                persist_directory=self.persist_directory,
-                embedding_function=self.embedding_model,
+                persist_directory=self._persist_directory,
+                embedding_function=self._embedding_model,
             )
         else:
             raise ValueError("Vector store not found. You need to index documents first.")
@@ -50,15 +68,26 @@ class RetrieverTool:
             DeprecationWarning,
             stacklevel=2  # shows the warning at the caller level
         )
-        docs = self.vstore.similarity_search(query, k=k)
+        docs = self._vstore.similarity_search(query, k=k)
         return [doc.page_content for doc in docs]
     
     def query(self, query: str, k: int = 4) -> list[str]:
         """FOR PROJECT ONLY, PRODUCTION WOULD REQUIRE USERS TO ENTER INFORMATION ABOUT DOCUMENTS THEY WILL USE RAG WITH"""
         if "bristol" not in query.lower():
             query = f"In the context of the July 4th celebrations in Bristol, Rhode Island: {query}"
-        docs = self.vstore.similarity_search(query, k=k)
+        docs = self._vstore.similarity_search(query, k=k)
         return [doc.page_content for doc in docs]
+    
+    def _run(self, query: Optional[str] = None, **kwargs: Dict[str, Any]) -> str:
+        q = query or kwargs.get("query", "")
+        q = str(q)
+        if "bristol" not in q.lower():
+            q = f"In the context of the July 4th celebrations in Bristol, Rhode Island: {q}"
+        docs = self._vstore.similarity_search(q, k=4)
+        return "\n".join(doc.page_content for doc in docs)
+
+    async def _arun(self, *args: Any, **kwargs: Any) -> str:
+        raise NotImplementedError("Async not supported.")
 
     
     @staticmethod
@@ -84,7 +113,7 @@ class RetrieverTool:
         """
         embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
         documents: list[Document] = [Document(page_content=txt) for txt in doc_texts]
-        Chroma.from_documents(
+        Chroma.from_documents( # type: ignore
             documents=documents,
             embedding=embedding_model,
             persist_directory=persist_directory

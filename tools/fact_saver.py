@@ -6,7 +6,7 @@ class FactSaver:
         self.memory_store = memory_store
 
     def maybe_save_fact(self, user_input: str) -> None:
-        print(f"[LTM] User input: {user_input}")
+        # print(f"[LTM] User input: {user_input}")
         """
         Naively extract known fact types from user input and save them to long-term memory.
         Extend this for names, locations, preferences, etc.
@@ -21,9 +21,9 @@ class FactSaver:
 
         for pattern, template in patterns:
             match = re.search(pattern, normalized, flags=re.IGNORECASE)
-            print(f"[LTM] Template: {template}, Match: {match}")
+            # print(f"[LTM] Template: {template}, Match: {match}")
             if match:
                 fact = match.group(1).strip()
                 entry = template.format(fact=fact)
-                print(f"[LTM] Saving fact: {entry}")
+                # print(f"[LTM] Saving fact: {entry}")
                 self.memory_store.save_fact(entry)

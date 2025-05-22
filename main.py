@@ -1,6 +1,7 @@
 from agent import get_agent
-from typing import List
+from typing import Any, List
 from langchain.schema import BaseMessage
+from handlers.spinner import spinner
 from tools.fact_saver import FactSaver
 from longterm_memory import LongTermMemory
 
@@ -25,7 +26,6 @@ def main():
     Main function to run the agent.
     """
     print("Welcome to Agent Cortex! Type 'exit' or 'quit' to stop.")
-
     agent, memory = get_agent()
     ltm = LongTermMemory()
     fact_saver = FactSaver(ltm)
@@ -33,12 +33,14 @@ def main():
 
     while True:
 
+        
+        query = input("\n⟁ You: ")
+        if query.lower() in ["exit", "quit"]:
+            print("Shutting down Cortex")
+            break
+        stop_spinner = spinner("Thinking...")
+        response: None | dict[str, Any] = None
         try: 
-            query = input("\n⟁ You: ")
-            if query.lower() in ["exit", "quit"]:
-                print("Shutting down Cortex")
-                break
-            
             fact_saver.maybe_save_fact(query)
 
             formatted_history = format_chat_history(memory.chat_memory.messages)
@@ -48,12 +50,13 @@ def main():
                 "input": full_input,
                 "chat_history": memory,
             })
-            
-
-            print(f"\n⚇ Cortex: {response['output']}\n")
 
         except Exception as e:
             print(f"Error: {e}")
+        finally:
+            stop_spinner()
+            if response is not None:
+                print(f"\n⚇ Cortex: {response['output']}\n")
 
 if __name__ == "__main__":
     main()

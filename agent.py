@@ -1,18 +1,23 @@
-from langchain.agents import Tool, AgentType, ConversationalAgent
+from typing import List
+from langchain.agents import AgentType, ConversationalAgent
 from langchain.agents import initialize_agent # type: ignore
 from langchain.agents.agent_types import AgentType
 from langchain.tools import BaseTool
 from langchain.memory import ConversationBufferMemory
 from langchain_openai import ChatOpenAI # type: ignore
 
+
+from tools.fallback import FallbackTool
+from tools.python_REPL import PythonREPLTool
+
 """ Tool Imports"""
+from tools.guarded_retriever import GuardedRetrieverTool
 from tools.reasoning import ReasoningTool
 from tools.retriever import RetrieverTool
 from tools.websearch import WebSearchTool
 from tools.calculator import CalculatorTool
 from tools.longterm_memory import LongTermMemoryTool
 from longterm_memory import LongTermMemory
-from langchain_experimental.utilities import PythonREPL
 
 # from transformers import pipeline
 from langchain_ollama import OllamaLLM
@@ -24,96 +29,31 @@ warnings.filterwarnings("ignore", category=LangChainDeprecationWarning)
 from dotenv import load_dotenv
 load_dotenv()
 
-from langchain.tools import tool # type: ignore
-
-@tool
-def reason_from_memory(prompt: str) -> str:
-    """Use this tool when you think the answer is already known or can be reasoned from prior conversation without using any other tools."""
-    return f"(Reasoned directly without tools): {prompt}"
-
-
 
 def load_llm():
     return OllamaLLM(model="mistral", temperature=0.3)
     # return ChatOpenAI(model="gpt-3.5-turbo", temperature=0.3)
 
-
-""" V1 we were using the Hugging Face LLM pipeline for text generation."""
-# def load_llm():
-#     """
-#     Load the Hugging Face LLM pipeline for text generation.
-#     """
-#     pipe = pipeline(
-#         "text2text-generation",
-#         model="google/flan-t5-large",
-#         device=-1,
-#         max_new_tokens=256,
-#         temperature=0.3
-#     )
-#     return HuggingFacePipeline(pipeline=pipe)
-
-def get_tools(memory: ConversationBufferMemory) -> list[BaseTool]:
+def get_tools(memory: ConversationBufferMemory) -> List[BaseTool]:
     retriever = RetrieverTool()
-    websearch = WebSearchTool()
-    calculator = CalculatorTool()
-    fallback = FallbackTool()
+    guarded_retriever_tool = GuardedRetrieverTool(retriever=retriever)
+    websearch_tool = WebSearchTool()
+    calculator_tool = CalculatorTool()
+    fallback_tool = FallbackTool()
     longterm_store = LongTermMemory()
     longterm_tool = LongTermMemoryTool(memory_store=longterm_store)
     reasoning_tool = ReasoningTool(name="Reasoning", memory=memory)
+    python_repl_tool = PythonREPLTool()
 
-
-
-    def guarded_retriever(q: str) -> str:
-        forbidden_keywords = ["weather", "forecast", "temperature", "time", "today", "tomorrow"]
-        if any(k in q.lower() for k in forbidden_keywords):
-            return "(Retriever skipped: question appears to require real-time data.)"
-        return "\n".join(retriever.query(q))
     return [
-        Tool(
-            name="WebSearch",
-            func=websearch.search,
-            description="Useful when the question needs real-time or current information from the internet."
-        ),
-        Tool(
-            name="python_repl",
-            description="A Python shell. Use this to execute python commands. Input should be a valid python command. If you want to see the output of a value, you should print it out with `print(...)`.",
-            func=PythonREPL().run,
-        ),
-        Tool(
-            name="Calculator",
-            func=calculator.evaluate,
-            description="Useful for answering math questions or evaluating expressions."
-        ),
-        Tool(
-            name="Retriever",
-            func=guarded_retriever,
-            description="Use this tool to retrieve documents from the knowledge base. "
-                        "Input should be a query string."
-        ),
-        Tool(
-            name="LongTermMemory", 
-            func=longterm_tool.run, 
-            description=longterm_tool.description
-        ),
-        Tool(
-            name="Reasoning",
-            func=reason_from_memory,
-            description="Use this when the answer is likely already known from prior conversation or does not require any tool."
-        ),
-        Tool(
-            name="Fallback",
-            func=fallback.run,
-            description="Used when the input is ambiguous, self-referential, or not clearly directed at a specific task."
-        ),
+        websearch_tool,
+        python_repl_tool,
+        calculator_tool,
+        guarded_retriever_tool,
+        longterm_tool,
         reasoning_tool,
+        fallback_tool,
     ]
-
-class FallbackTool:
-    def run(self, query: str) -> str:
-        return "I'm not sure how to help with that yet, but I'm still learning!"
-
-    def __call__(self, query: str) -> str:
-        return self.run(query)
 
 
 # Initialize the LLM and tools
@@ -151,7 +91,7 @@ def get_agent():
         agent_type=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
         memory=memory,
         agent_kwargs={"prompt": agent_prompt},
-        verbose=False,
+        verbose=True,
         handle_parsing_errors=True,
         max_iterations=3,
         early_stopping_method="generate"

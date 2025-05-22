@@ -1,18 +1,26 @@
 import re
+from typing import Optional, Dict, Any, Type
+from pydantic import BaseModel, Field
+from langchain.tools import BaseTool
 
-class CalculatorTool:
-    """
-    A simple calculator tool that safely evaluates basic math expressions.
 
-    Supports:
-    - Integers and decimals
-    - +, -, *, /, parentheses
+class CalculatorInput(BaseModel):
+    input_text: str = Field(description="A math expression like 2 + 2 or (3 * 4) / 2")
 
-    Will return an error message if the expression is invalid.
-    """
+
+class CalculatorTool(BaseTool):
+    name: str = "Calculator"
+    description: str = "Evaluates basic math expressions with +, -, *, /, and parentheses."
+    args_schema: Type[BaseModel] = CalculatorInput # type: ignore
+
+    def _run(self, input_text: Optional[str] = None, **kwargs: Dict[str, Any]) -> str:
+        expression = input_text or str(kwargs.get("input_text", ""))
+        return self.evaluate(expression)
+
+    async def _arun(self, *args: Any, **kwargs: Any) -> str:
+        raise NotImplementedError("Async not supported.")
 
     def evaluate(self, input_text: str) -> str:
-        # Extract math-like expressions from the input
         expression = self._extract_expression(input_text)
 
         try:
@@ -22,5 +30,4 @@ class CalculatorTool:
             return f"⚠️ Could not evaluate expression: {expression} — {e}"
 
     def _extract_expression(self, text: str) -> str:
-        # Strip all characters except digits, ops, decimals, and parentheses
         return re.sub(r"[^0-9\.\+\-\*\/\(\)]", "", text)
