@@ -1,8 +1,9 @@
-from langchain.agents import Tool, initialize_agent, AgentType, ConversationalAgent
+from langchain.agents import Tool, AgentType, ConversationalAgent
+from langchain.agents import initialize_agent # type: ignore
 from langchain.agents.agent_types import AgentType
 from langchain.tools import BaseTool
 from langchain.memory import ConversationBufferMemory
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI # type: ignore
 
 """ Tool Imports"""
 from tools.reasoning import ReasoningTool
@@ -11,6 +12,7 @@ from tools.websearch import WebSearchTool
 from tools.calculator import CalculatorTool
 from tools.longterm_memory import LongTermMemoryTool
 from longterm_memory import LongTermMemory
+from langchain_experimental.utilities import PythonREPL
 
 # from transformers import pipeline
 from langchain_ollama import OllamaLLM
@@ -22,7 +24,7 @@ warnings.filterwarnings("ignore", category=LangChainDeprecationWarning)
 from dotenv import load_dotenv
 load_dotenv()
 
-from langchain.tools import tool
+from langchain.tools import tool # type: ignore
 
 @tool
 def reason_from_memory(prompt: str) -> str:
@@ -60,6 +62,7 @@ def get_tools(memory: ConversationBufferMemory) -> list[BaseTool]:
     reasoning_tool = ReasoningTool(name="Reasoning", memory=memory)
 
 
+
     def guarded_retriever(q: str) -> str:
         forbidden_keywords = ["weather", "forecast", "temperature", "time", "today", "tomorrow"]
         if any(k in q.lower() for k in forbidden_keywords):
@@ -70,6 +73,11 @@ def get_tools(memory: ConversationBufferMemory) -> list[BaseTool]:
             name="WebSearch",
             func=websearch.search,
             description="Useful when the question needs real-time or current information from the internet."
+        ),
+        Tool(
+            name="python_repl",
+            description="A Python shell. Use this to execute python commands. Input should be a valid python command. If you want to see the output of a value, you should print it out with `print(...)`.",
+            func=PythonREPL().run,
         ),
         Tool(
             name="Calculator",
@@ -143,7 +151,7 @@ def get_agent():
         agent_type=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
         memory=memory,
         agent_kwargs={"prompt": agent_prompt},
-        verbose=True,
+        verbose=False,
         handle_parsing_errors=True,
         max_iterations=3,
         early_stopping_method="generate"

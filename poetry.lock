@@ -1660,6 +1660,22 @@ tenacity = ">=8.1.0,<8.4.0 || >8.4.0,<10.0.0"
 typing-extensions = ">=4.7"
 
 [[package]]
+name = "langchain-experimental"
+version = "0.3.4"
+description = "Building applications with LLMs through composability"
+optional = false
+python-versions = "<4.0,>=3.9"
+groups = ["main"]
+files = [
+    {file = "langchain_experimental-0.3.4-py3-none-any.whl", hash = "sha256:2e587306aea36b60fa5e5fc05dc7281bee9f60a806f0bf9d30916e0ee096af80"},
+    {file = "langchain_experimental-0.3.4.tar.gz", hash = "sha256:937c4259ee4a639c618d19acf0e2c5c2898ef127050346edc5655259aa281a21"},
+]
+
+[package.dependencies]
+langchain-community = ">=0.3.0,<0.4.0"
+langchain-core = ">=0.3.28,<0.4.0"
+
+[[package]]
 name = "langchain-huggingface"
 version = "0.2.0"
 description = "An integration package connecting Hugging Face and LangChain."
@@ -3784,6 +3800,26 @@ typing-extensions = {version = ">=4.0.0,<5.0", markers = "python_version < \"3.1
 jupyter = ["ipywidgets (>=7.5.1,<9)"]
 
 [[package]]
+name = "rizaio"
+version = "0.11.0"
+description = "The official Python library for the riza API"
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "rizaio-0.11.0-py3-none-any.whl", hash = "sha256:db42b6ff092fb7b67c96ad739a1b01e9c5c57de92c7d0d6d7db9606eca3701a5"},
+    {file = "rizaio-0.11.0.tar.gz", hash = "sha256:ceca16a3dc76a5a5d1d036f279743953350921b57a053a7c3c1410a354f68b44"},
+]
+
+[package.dependencies]
+anyio = ">=3.5.0,<5"
+distro = ">=1.7.0,<2"
+httpx = ">=0.23.0,<1"
+pydantic = ">=1.9.0,<3"
+sniffio = "*"
+typing-extensions = ">=4.10,<5"
+
+[[package]]
 name = "rpds-py"
 version = "0.25.0"
 description = "Python bindings to Rust's persistent data structures (rpds)"
@@ -5314,4 +5350,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "2a1afd401fd0fadea7d83c9b555dab78c9b3da08c49086aeeab8d4a70828ddc2"
+content-hash = "9141e3ea1c2951d044703b8d3e6310527d6ea35bf784706866c927391b144c72"
