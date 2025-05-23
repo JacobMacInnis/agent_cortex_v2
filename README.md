@@ -15,9 +15,9 @@ All running **locally** with no paid APIs.
 
 ## Working Cortex CLI
 
-![Agent Cortex CLI Demo](./assets/cli-screenshot-v1.png)
+![Agent Cortex CLI Demo](./assets/cli-screenshot-v2.png)
 
-In this terminal session, Agent Cortex handles three different types of queries using different tools. The LLM decides which tool will be optimal to get the best answer:
+In this terminal session, I tell Agent Cortex name which it identifies as an input fact which it saves to long-term storage vector database as well as short term memory. When asking again in the same session it is able to remember my name because it is given in the context because of short term memory. After shutting the system down and restarting, it is able to recall my name by determining to use the long-term memory tool which uses RAG:
 
 1. **Retrieval (RAG)** — `Where are the fireworks on July 3rd?`  
    → Retrieved from local documents indexed about Bristol, RI events.

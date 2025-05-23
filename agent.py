@@ -91,7 +91,7 @@ def get_agent():
         agent_type=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
         memory=memory,
         agent_kwargs={"prompt": agent_prompt},
-        verbose=True,
+        verbose=False,
         handle_parsing_errors=True,
         max_iterations=3,
         early_stopping_method="generate"
